@@ -19,7 +19,9 @@ user_states = {}
 @bot.message_handler(commands=['start'])
 def get_start(message):
     bot.send_message(message.chat.id,
-                     'Привет! Я помогу тебе с учебой. Добавляй задания с помощью команды /add.\n'
+                     'Привет! Я помогу тебе с учебой.\n'
+                     'Добавляй задания с помощью команды /add.\n'
+                     'Добавляй свою тему для изучения с помощью команды /add_topic.\n'
                      'Введи /help для просмотра команд.')
 
 
