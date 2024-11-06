@@ -33,10 +33,10 @@ def delete_task_from_db(task_id):
 def get_resources():
     conn = sqlite3.connect('db.sqlite3')
     cursor = conn.cursor()
-    cursor.execute("SELECT name, description, link, category FROM resources")
-    resources = cursor.fetchall()
+    cursor.execute("SELECT DISTINCT category FROM resources")
+    categories = [row[0] for row in cursor.fetchall()]
     conn.close()
-    return resources
+    return categories
 
 
 # Получение ресурсов по категории

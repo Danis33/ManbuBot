@@ -221,7 +221,7 @@ def send_category_buttons(message):
 
 
 # Обработчик нажатия кнопок с категориями
-@bot.message_handler(func=lambda message: message.text in get_categories())
+@bot.message_handler(func=lambda message: message.text in get_resources())
 def send_resources_by_category(message):
     category = message.text
     resources = get_resources_by_category(category)
