@@ -4,6 +4,15 @@ import sqlite3
 conn = sqlite3.connect('db.sqlite3')
 cursor = conn.cursor()
 
+# Создаем таблицу для сохранения задания пользователя
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        task_text TEXT
+    )
+''')
+
 # Создаем таблицу для тем
 cursor.execute('''CREATE TABLE IF NOT EXISTS topics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
