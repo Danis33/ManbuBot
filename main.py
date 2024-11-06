@@ -204,11 +204,24 @@ def show_topic_content(message):
 
 
 @bot.message_handler(commands=['resources'])
-def ask_category(message):
-    bot.send_message(message.chat.id, "Введите категорию для поиска ресурсов:")
+def send_category_buttons(message):
+    # Получаем список категорий
+    categories = get_all_resources()
+    if not categories:
+        bot.send_message(message.chat.id, "Категории не найдены.")
+        return
+
+    # Создаем клавиатуру с кнопками для каждой категории
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    for category in categories:
+        markup.add(types.KeyboardButton(category))
+
+    # Отправляем сообщение с кнопками
+    bot.send_message(message.chat.id, "Выберите категорию:", reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: True)
+# Обработчик нажатия кнопок с категориями
+@bot.message_handler(func=lambda message: message.text in get_categories())
 def send_resources_by_category(message):
     category = message.text
     resources = get_resources_by_category(category)
@@ -220,6 +233,9 @@ def send_resources_by_category(message):
         bot.send_message(message.chat.id, response, parse_mode="Markdown")
     else:
         bot.send_message(message.chat.id, f"Ресурсы в категории '{category}' не найдены.")
+
+        # Убираем клавиатуру после выбора
+        bot.send_message(message.chat.id, "Вы выбрали категорию: " + category, reply_markup=types.ReplyKeyboardRemove())
 
 
 # Для просмотра работы инфорации пользователя в телеграмме
