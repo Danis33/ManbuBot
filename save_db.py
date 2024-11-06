@@ -27,7 +27,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS topic_content (
     FOREIGN KEY (topic_id) REFERENCES topics(id)
 )''')
 
-#
+#  Создаем таблицу для учебного материала
 cursor.execute('''CREATE TABLE IF NOT EXISTS resources (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
