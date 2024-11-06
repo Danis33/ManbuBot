@@ -30,7 +30,7 @@ def delete_task_from_db(task_id):
 
 
 # Подключение к базе данных и получение списка ресурсов
-def get_all_resources():
+def get_resources():
     conn = sqlite3.connect('db.sqlite3')
     cursor = conn.cursor()
     cursor.execute("SELECT name, description, link, category FROM resources")

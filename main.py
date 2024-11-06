@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from list import (add_task_to_db,
                   get_tasks_from_db,
                   delete_task_from_db,
-                  get_all_resources,
+                  get_resources,
                   get_resources_by_category)
 
 load_dotenv()
@@ -206,7 +206,7 @@ def show_topic_content(message):
 @bot.message_handler(commands=['resources'])
 def send_category_buttons(message):
     # Получаем список категорий
-    categories = get_all_resources()
+    categories = get_resources()
     if not categories:
         bot.send_message(message.chat.id, "Категории не найдены.")
         return
