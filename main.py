@@ -3,10 +3,13 @@ import os
 import asyncio
 import sqlite3
 
+from telebot import types
 from dotenv import load_dotenv
 from list import (add_task_to_db,
                   get_tasks_from_db,
-                  delete_task_from_db,)
+                  delete_task_from_db,
+                  get_all_resources,
+                  get_resources_by_category)
 
 load_dotenv()
 
@@ -198,6 +201,25 @@ def show_topic_content(message):
     except ValueError:
         bot.send_message(message.chat.id, "Пожалуйста, введите корректный номер темы.")
         bot.register_next_step_handler(message, show_topic_content)
+
+
+@bot.message_handler(commands=['resources'])
+def ask_category(message):
+    bot.send_message(message.chat.id, "Введите категорию для поиска ресурсов:")
+
+
+@bot.message_handler(func=lambda message: True)
+def send_resources_by_category(message):
+    category = message.text
+    resources = get_resources_by_category(category)
+    if resources:
+        response = ""
+        for res in resources:
+            name, description, link = res
+            response += f"🔹 {name}\n📖 {description}\n🔗 [Ссылка]({link})\n\n"
+        bot.send_message(message.chat.id, response, parse_mode="Markdown")
+    else:
+        bot.send_message(message.chat.id, f"Ресурсы в категории '{category}' не найдены.")
 
 
 # Для просмотра работы инфорации пользователя в телеграмме

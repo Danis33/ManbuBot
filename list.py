@@ -27,3 +27,23 @@ def delete_task_from_db(task_id):
     cursor.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
     conn.commit()
     conn.close()
+
+
+# Подключение к базе данных и получение списка ресурсов
+def get_all_resources():
+    conn = sqlite3.connect('db.sqlite3')
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, description, link, category FROM resources")
+    resources = cursor.fetchall()
+    conn.close()
+    return resources
+
+
+# Получение ресурсов по категории
+def get_resources_by_category(category):
+    conn = sqlite3.connect('db.sqlite3')
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, description, link FROM resources WHERE category=?", (category,))
+    resources = cursor.fetchall()
+    conn.close()
+    return resources
