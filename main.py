@@ -5,11 +5,7 @@ import sqlite3
 
 from telebot import types
 from dotenv import load_dotenv
-from list import (add_task_to_db,
-                  get_tasks_from_db,
-                  delete_task_from_db,
-                  get_resources,
-                  get_resources_by_category)
+from list import *
 
 load_dotenv()
 
