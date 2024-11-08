@@ -1,6 +1,5 @@
 import telebot
 import os
-import asyncio
 import sqlite3
 
 from telebot import types
