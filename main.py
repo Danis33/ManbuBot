@@ -73,34 +73,34 @@ def save_task(message):
 
 @bot.message_handler(func=lambda message: message.text == "Посмотреть задания")
 def list_tasks(message):
-    user_id = message.from_user.id
-    tasks = get_tasks_from_db(user_id)  # Получаем задачи пользователя из базы данных
+    tasks = show_tasks()
     if tasks:
-        task_list = "\n".join(f"{task[0]}. {task[1]}" for task in tasks)
-        bot.send_message(message.chat.id, f"Текущие задачи:\n{task_list}")
+        task_list = "\n".join(tasks)
+        bot.send_message(message.chat.id, f"Ваши задания:\n{task_list}")
     else:
-        bot.send_message(message.chat.id, "Список задач пуст.")
+        bot.send_message(message.chat.id, "Список заданий пуст.")
 
 
 @bot.message_handler(func=lambda message: message.text == "Удалить задание")
-def delete_task(message):
-    user_id = message.from_user.id
-    tasks = get_tasks_from_db(user_id)
+def delete(message):
+    tasks = show_tasks()
     if tasks:
-        task_list = "\n".join(f"{task[0]}. {task[1]}" for task in tasks)
-        bot.send_message(message.chat.id, f"Выберите номер задачи для удаления:\n{task_list}")
-        bot.register_next_step_handler(message, get_task_number)
+        task_list = "\n".join(tasks)
+        msg = bot.send_message(message.chat.id, f"Выберите номер задания для удаления:\n{task_list}")
+        bot.register_next_step_handler(msg, delete_task_handler)
     else:
-        bot.send_message(message.chat.id, "Список задач пуст.")
+        bot.send_message(message.chat.id, "Список заданий пуст.")
 
 
-def get_task_number(message):
-    if message.text.isdigit():  # Проверяем, что введено число
-        task_id = int(message.text)
-        delete_task_from_db(task_id)
-        bot.send_message(message.chat.id, f"Задача {task_id} удалена.")
-    else:
-        bot.send_message(delete_message.chat.id, "Некорректный ввод. Пожалуйста, введите номер задачи.")
+def delete_task_handler(message):
+    try:
+        order_number = int(message.text)  # Убедитесь, что это целое число
+        if delete_task(order_number):
+            bot.send_message(message.chat.id, f"Задание номер {order_number} удалено.")
+        else:
+            bot.send_message(message.chat.id, "Задание с таким номером не найдено.")
+    except ValueError:
+        bot.send_message(message.chat.id, "Пожалуйста, введите корректный номер задания.")
 
 
 @bot.message_handler(func=lambda message: message.text == "Создать тему")

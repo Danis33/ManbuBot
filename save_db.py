@@ -9,7 +9,8 @@ cursor.execute('''
     CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
-        task_text TEXT
+        task_text TEXT,
+        position INTEGER NOT NULL
     )
 ''')
 

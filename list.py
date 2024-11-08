@@ -10,6 +10,15 @@ def add_task_to_db(user_id, task_text):
     conn.close()
 
 
+# Функция для отображения всех заданий с динамической нумерацией
+def show_tasks():
+    conn = sqlite3.connect('db.sqlite3')
+    cursor = conn.cursor()
+    cursor.execute('SELECT task_text FROM tasks ORDER BY id')
+    tasks = cursor.fetchall()
+    return [f"{index + 1}. {title[0]}" for index, title in enumerate(tasks)]
+
+
 # Функция для получения списка задач из базы данных
 def get_tasks_from_db(user_id):
     conn = sqlite3.connect('db.sqlite3')
@@ -20,13 +29,19 @@ def get_tasks_from_db(user_id):
     return tasks
 
 
-# Функция для удаления задачи из базы данных по ID
-def delete_task_from_db(task_id):
+# Функция для удаления задания по его порядковому номеру
+def delete_task(order_number):
     conn = sqlite3.connect('db.sqlite3')
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
-    conn.commit()
-    conn.close()
+    cursor.execute('SELECT id FROM tasks ORDER BY id')
+    tasks = cursor.fetchall()
+
+    if 0 < order_number <= len(tasks):
+        task_id = tasks[order_number - 1][0]
+        cursor.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
+        conn.commit()
+        return True
+    return False
 
 
 # Подключение к базе данных и получение списка ресурсов
