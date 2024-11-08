@@ -5,6 +5,7 @@ import sqlite3
 
 from telebot import types
 from dotenv import load_dotenv
+from func_start import *
 from list import *
 
 load_dotenv()
@@ -17,12 +18,19 @@ user_states = {}
 # Функция для удаления задачи из базы данных по ID
 @bot.message_handler(commands=['start'])
 def get_start(message):
-    bot.send_message(message.chat.id,
-                     'Привет! Я помогу тебе с учебой.\n'
-                     'Добавляй задания с помощью команды /add.\n'
-                     'Добавляй свою тему для изучения с помощью команды /add_topic.'
-                     'Просмотривай учебный материал по разным категориям с помощью команды /resources\n'
-                     'Введи /help для просмотра команд.')
+    # Создаём клавиатуру с основными кнопками
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    markup.add(
+        types.KeyboardButton("Создать задание"),
+        types.KeyboardButton("Посмотреть задания"),
+        types.KeyboardButton("Удалить задания"),
+        types.KeyboardButton("Создать тему"),
+        types.KeyboardButton("Добавить информацию к теме"),
+        types.KeyboardButton("Посмотреть темы"),
+        types.KeyboardButton("Учебные материалы")
+    )
+
+    bot.send_message(message.chat.id, "Добро пожаловать! Выберите нужный раздел:", reply_markup=markup)
 
 
 @bot.message_handler(commands=['help'])
@@ -37,7 +45,7 @@ def to_help(message):
 
 
 # Команда для добавления новой задачи
-@bot.message_handler(commands=['add'])
+@bot.message_handler(func=lambda message: message.text == "Создать задание")
 def get_add_task(message):
     bot.send_message(message.chat.id, 'Напиши задачу, которую нужно добавить:')
     bot.register_next_step_handler(message, save_task)
@@ -50,7 +58,7 @@ def save_task(message):
     bot.send_message(message.chat.id, f"Задача '{task_text}' добавлена!")
 
 
-@bot.message_handler(commands=['list'])
+@bot.message_handler(func=lambda message: message.text == "Посмотреть задания")
 def list_tasks(message):
     user_id = message.from_user.id
     tasks = get_tasks_from_db(user_id)  # Получаем задачи пользователя из базы данных
@@ -61,7 +69,7 @@ def list_tasks(message):
         bot.send_message(message.chat.id, "Список задач пуст.")
 
 
-@bot.message_handler(commands=['delete'])
+@bot.message_handler(func=lambda message: message.text == "Удалить задания")
 def delete_task(message):
     user_id = message.from_user.id
     tasks = get_tasks_from_db(user_id)
@@ -82,7 +90,7 @@ def get_task_number(message):
         bot.send_message(delete_message.chat.id, "Некорректный ввод. Пожалуйста, введите номер задачи.")
 
 
-@bot.message_handler(commands=['add_topic'])
+@bot.message_handler(func=lambda message: message.text == "Создать тему")
 def what_book(message):
     bot.send_message(message.chat.id, 'Введите название новой темы:')
     bot.register_next_step_handler(message, save_topic)
@@ -100,7 +108,7 @@ def save_topic(message):
 
 
 # Команда для выбора темы и добавления информации к ней
-@bot.message_handler(commands=['add_info'])
+@bot.message_handler(func=lambda message: message.text == "Добавить информацию к теме")
 def topic_info(message):
     conn = sqlite3.connect('db.sqlite3')
     cursor = conn.cursor()
@@ -150,7 +158,7 @@ def save_content(message):
     bot.send_message(message.chat.id, "Информация успешно добавлена!")
 
 
-@bot.message_handler(commands=['view_info'])
+@bot.message_handler(func=lambda message: message.text == "Посмотреть темы")
 def view_info(message):
     conn = sqlite3.connect('db.sqlite3')
     cursor = conn.cursor()
@@ -200,7 +208,7 @@ def show_topic_content(message):
         bot.register_next_step_handler(message, show_topic_content)
 
 
-@bot.message_handler(commands=['resources'])
+@bot.message_handler(func=lambda message: message.text == "Учебные материалы")
 def send_category_buttons(message):
     # Получаем список категорий
     categories = get_resources()
