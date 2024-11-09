@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime, timedelta
 
 # Создаем соединение с БД и курсор для работы с ней
 conn = sqlite3.connect('db.sqlite3')
