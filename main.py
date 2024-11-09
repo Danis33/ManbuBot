@@ -14,7 +14,7 @@ user_states = {}
 
 
 # Функция для удаления задачи из базы данных по ID
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=['start', 'Начать'])
 def get_start(message):
     # Создаём клавиатуру с основными кнопками
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
@@ -234,8 +234,16 @@ def send_category_buttons(message):
     for category in categories:
         markup.add(types.KeyboardButton(category))
 
+    markup.add(types.KeyboardButton("Назад в главное меню"))
+
     # Отправляем сообщение с кнопками
     bot.send_message(message.chat.id, "Выберите категорию:", reply_markup=markup)
+
+
+# Обработчик для кнопки "Назад в главное меню"
+@bot.message_handler(func=lambda message: message.text == "Назад в главное меню")
+def go_back_to_main_menu(message):
+    get_start(message)
 
 
 # Обработчик нажатия кнопок с категориями
