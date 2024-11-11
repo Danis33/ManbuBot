@@ -264,7 +264,7 @@ def send_resources_by_category(message):
 
 
 # Для просмотра работы инфорации пользователя в телеграмме
-@bot.message_handler(commands=['admin'])
+@bot.message_handler(commands=['message'])
 def admins(message):
     bot.send_message(message.chat.id, message)
 
