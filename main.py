@@ -13,7 +13,7 @@ bot = telebot.TeleBot(os.getenv('TOKEN'))
 user_states = {}
 
 
-# Функция для удаления задачи из базы данных по ID
+# Функция для взаимодеиствия с ботом
 @bot.message_handler(commands=['start', 'Начать'])
 def get_start(message):
     # Создаём клавиатуру с основными кнопками
