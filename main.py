@@ -1,9 +1,13 @@
 import telebot
-import os
 import sqlite3
+import schedule
+import time
+import os
 
 from telebot import types
 from dotenv import load_dotenv
+from threading import Thread
+from datetime import datetime
 from list import *
 
 load_dotenv()
@@ -59,15 +63,40 @@ def send_help_message(chat_id):
 # Команда для добавления новой задачи
 @bot.message_handler(func=lambda message: message.text == "Создать задание")
 def get_add_task(message):
-    bot.send_message(message.chat.id, 'Напиши задачу, которую нужно добавить:')
+    bot.send_message(message.chat.id, "Введите задачу и время в формате:\nЗадача; ЧЧ:ММ")
     bot.register_next_step_handler(message, save_task)
 
 
 def save_task(message):
-    task_text = message.text  # Получаем текст задачи от пользователя
-    user_id = message.from_user.id  # Идентификатор пользователя Telegram
-    add_task_to_db(user_id, task_text)  # Сохраняем задачу в базе данных
-    bot.send_message(message.chat.id, f"Задача '{task_text}' добавлена!")
+    try:
+        task_text, time_text = message.text.split(';')  # Получаем текст задачи от пользователя
+        add_task_to_db(message.chat.id, task_text.strip(), time_text.strip())  # Сохраняем задачу в базе данных
+        bot.send_message(message.chat.id, f"Задача '{task_text.strip()}' добавлена на {time_text.strip()}.")
+    except:
+        bot.send_message(message.chat.id, "Неверный формат. Попробуйте ещё раз: Задача; ЧЧ:ММ")
+
+
+# Функция проверки задач и отправки напоминаний
+def check_reminders():
+    conn = sqlite3.connect('db.sqlite3')
+    cursor = conn.cursor()
+    current_time = time.strftime("%H:%M")
+    cursor.execute("SELECT user_id, task_text FROM tasks WHERE reminder_time = ?", (current_time,))
+    tasks_to_remind = cursor.fetchall()
+
+    for user_id, task in tasks_to_remind:
+        bot.send_message(user_id, f"Напоминание: {task}")
+        # Удаляем задачу после отправки напоминания
+        cursor.execute("DELETE FROM tasks WHERE user_id = ? AND task_text = ?", (user_id, task))
+        conn.commit()
+
+
+# Планирование выполнения проверки задач
+def schedule_checker():
+    schedule.every().minute.do(check_reminders)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
 
 @bot.message_handler(func=lambda message: message.text == "Посмотреть задания")
@@ -267,6 +296,11 @@ def send_resources_by_category(message):
 @bot.message_handler(commands=['message'])
 def admins(message):
     bot.send_message(message.chat.id, message)
+
+
+# Запуск потока для проверки напоминаний
+reminder_thread = Thread(target=schedule_checker)
+reminder_thread.start()
 
 
 bot.polling(non_stop=True)

@@ -9,7 +9,8 @@ cursor = conn.cursor()
 cursor.execute('''CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
-    task_text TEXT
+    task_text TEXT,
+    reminder_time TEXT
 )''')
 
 # Создаем таблицу для тем

@@ -2,10 +2,10 @@ import sqlite3
 
 
 # Функция для добавления задачи в базу данных
-def add_task_to_db(user_id, task_text):
+def add_task_to_db(user_id, task_text, reminder_time):
     conn = sqlite3.connect('db.sqlite3')
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO tasks (user_id, task_text) VALUES (?, ?)', (user_id, task_text))
+    cursor.execute('INSERT INTO tasks (user_id, task_text, reminder_time) VALUES (?, ?, ?)', (user_id, task_text, reminder_time))
     conn.commit()
     conn.close()
 
