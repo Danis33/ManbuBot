@@ -1,13 +1,14 @@
 import telebot
+import threading
 import sqlite3
 import schedule
+import datetime
 import time
 import os
 
 from telebot import types
 from dotenv import load_dotenv
 from threading import Thread
-from datetime import datetime
 from list import *
 
 load_dotenv()
@@ -69,44 +70,70 @@ def get_add_task(message):
 
 def save_task(message):
     try:
-        task_text, time_text = message.text.split(';')  # Получаем текст задачи от пользователя
-        add_task_to_db(message.chat.id, task_text.strip(), time_text.strip())  # Сохраняем задачу в базе данных
-        bot.send_message(message.chat.id, f"Задача '{task_text.strip()}' добавлена на {time_text.strip()}.")
+        task_text = message.text
+        user_id = message.chat.id
+        add_task_to_db(message.chat.id, task_text, user_id)
+        bot.send_message(message.chat.id, f"Задача '{task_text.strip()}' добавлена.")
     except:
-        bot.send_message(message.chat.id, "Неверный формат. Попробуйте ещё раз: Задача; ЧЧ:ММ")
-
-
-# Функция проверки задач и отправки напоминаний
-def check_reminders():
-    conn = sqlite3.connect('db.sqlite3')
-    cursor = conn.cursor()
-    current_time = time.strftime("%H:%M")
-    cursor.execute("SELECT user_id, task_text FROM tasks WHERE reminder_time = ?", (current_time,))
-    tasks_to_remind = cursor.fetchall()
-
-    for user_id, task in tasks_to_remind:
-        bot.send_message(user_id, f"Напоминание: {task}")
-        # Удаляем задачу после отправки напоминания
-        cursor.execute("DELETE FROM tasks WHERE user_id = ? AND task_text = ?", (user_id, task))
-        conn.commit()
-
-
-# Планирование выполнения проверки задач
-def schedule_checker():
-    schedule.every().minute.do(check_reminders)
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+        bot.send_message(message.chat.id, "Неверный формат. Попробуйте ещё раз.")
 
 
 @bot.message_handler(func=lambda message: message.text == "Посмотреть задания")
 def list_tasks(message):
     tasks = show_tasks()
     if tasks:
-        task_list = "\n".join(tasks)
-        bot.send_message(message.chat.id, f"Ваши задания:\n{task_list}")
+        for id, task_text in enumerate(tasks, start=1):
+            markup = types.InlineKeyboardMarkup()
+            markup.add(
+                types.InlineKeyboardButton(f"Установить напоминание для задачи {id}", callback_data=f"add_reminder_{id}"),
+                types.InlineKeyboardButton(f"Установить метку для задачи {id}", callback_data=f"mark_task_{id}")
+            )
+            bot.send_message(message.chat.id, f"{task_text}", reply_markup=markup)
     else:
         bot.send_message(message.chat.id, "Список заданий пуст.")
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("add_reminder_"))
+def ask_for_reminder_time(call):
+    # Извлекаем номер задачи из `callback_data`
+    task_index = int(call.data.split("_")[-1])  # Получаем `id` задачи из `callback_data`
+    bot.send_message(call.message.chat.id, "Введите время напоминания в формате ЧЧ:ММ (например, 14:30):")
+
+    # Передаем `task_index` в следующий шаг
+    bot.register_next_step_handler(call.message, set_reminder_time, task_index)
+
+
+def set_reminder_time(message, task_index):
+    try:
+        # Парсим время, введенное пользователем
+        reminder_time = datetime.datetime.strptime(message.text, "%H:%M").time()
+
+        # Здесь можно сохранить `reminder_time` вместе с `task_index` в базе данных или в переменной
+
+        bot.send_message(message.chat.id, f"Напоминание для задачи {task_index} установлено на {reminder_time}.")
+
+        # Запуск функции, которая проверяет время и отправляет уведомление
+        schedule_reminder(message.chat.id, task_index, reminder_time)
+    except ValueError:
+        bot.send_message(message.chat.id, "Неверный формат времени. Пожалуйста, введите в формате ЧЧ:ММ.")
+
+
+def schedule_reminder(chat_id, task_index, reminder_time):
+    def check_reminder():
+        while True:
+            now = datetime.datetime.now().time()
+            # Проверяем, совпадает ли текущее время с заданным временем напоминания
+            if now >= reminder_time:
+                bot.send_message(chat_id, f"Напоминание! Пора выполнить задачу {task_index}.")
+                break
+            time.sleep(30)  # Проверяем каждые 30 секунд
+
+    # Запуск проверки в отдельном потоке, чтобы не блокировать бота
+    threading.Thread(target=check_reminder).start()
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("mark_task_"))
+
 
 
 @bot.message_handler(func=lambda message: message.text == "Удалить задание")
@@ -159,7 +186,7 @@ def topic_info(message):
 
     # Проверяем, есть ли темы в БД
     if not topics:
-        bot.send_message(message.chat.id, "Список тем пуст. Сначала добавьте новую тему с помощью команды /add_topic.")
+        bot.send_message(message.chat.id, "Список тем пуст. Сначала добавьте новую тему.")
         return
 
     # Формируем и отправляем список тем
@@ -209,7 +236,7 @@ def view_info(message):
 
     # Проверяем, есть ли темы в базе данных
     if not topics:
-        bot.send_message(message.chat.id, "Список тем пуст. Сначала добавьте новую тему с помощью команды /add_topic.")
+        bot.send_message(message.chat.id, "Список тем пуст. Сначала добавьте новую тему.")
         return
 
     # Формируем и отправляем список тем пользователю
@@ -296,11 +323,6 @@ def send_resources_by_category(message):
 @bot.message_handler(commands=['message'])
 def admins(message):
     bot.send_message(message.chat.id, message)
-
-
-# Запуск потока для проверки напоминаний
-reminder_thread = Thread(target=schedule_checker)
-reminder_thread.start()
 
 
 bot.polling(non_stop=True)

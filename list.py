@@ -5,7 +5,8 @@ import sqlite3
 def add_task_to_db(user_id, task_text, reminder_time):
     conn = sqlite3.connect('db.sqlite3')
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO tasks (user_id, task_text, reminder_time) VALUES (?, ?, ?)', (user_id, task_text, reminder_time))
+    cursor.execute('INSERT INTO tasks (user_id, task_text, reminder_time) VALUES (?, ?, ?)',
+                   (user_id, task_text, reminder_time))
     conn.commit()
     conn.close()
 
