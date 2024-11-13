@@ -133,11 +133,6 @@ def schedule_reminder(chat_id, task_index, reminder_time):
     threading.Thread(target=check_reminder).start()
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("mark_task_"))
-def ask_for_mark_task(call):
-    pass
-
-
 @bot.message_handler(func=lambda message: message.text == "Удалить задание")
 def delete(message):
     tasks = show_tasks()
