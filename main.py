@@ -85,7 +85,8 @@ def list_tasks(message):
         for id, task_text in enumerate(tasks, start=1):
             markup = types.InlineKeyboardMarkup()
             markup.add(
-                types.InlineKeyboardButton(f"Установить напоминание для задачи {id}", callback_data=f"add_reminder_{id}"),
+                types.InlineKeyboardButton(f"Установить напоминание для задачи {id}",
+                                           callback_data=f"add_reminder_{id}"),
                 types.InlineKeyboardButton(f"Установить метку для задачи {id}", callback_data=f"mark_task_{id}")
             )
             bot.send_message(message.chat.id, f"{task_text}", reply_markup=markup)
