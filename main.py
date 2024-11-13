@@ -64,7 +64,7 @@ def send_help_message(chat_id):
 # Команда для добавления новой задачи
 @bot.message_handler(func=lambda message: message.text == "Создать задание")
 def get_add_task(message):
-    bot.send_message(message.chat.id, "Введите задачу и время в формате:\nЗадача; ЧЧ:ММ")
+    bot.send_message(message.chat.id, "Введите задачу которую хотите сохранить.")
     bot.register_next_step_handler(message, save_task)
 
 
@@ -97,35 +97,32 @@ def list_tasks(message):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("add_reminder_"))
 def ask_for_reminder_time(call):
     # Извлекаем номер задачи из `callback_data`
-    task_index = int(call.data.split("_")[-1])  # Получаем `id` задачи из `callback_data`
+    task_id = int(call.data.split("_")[-1])  # Получаем `id` задачи из `callback_data`
     bot.send_message(call.message.chat.id, "Введите время напоминания в формате ЧЧ:ММ (например, 14:30):")
 
     # Передаем `task_index` в следующий шаг
-    bot.register_next_step_handler(call.message, set_reminder_time, task_index)
+    bot.register_next_step_handler(call.message, set_reminder_time, task_id)
 
 
-def set_reminder_time(message, task_index):
+def set_reminder_time(message, task_id):
     try:
         # Парсим время, введенное пользователем
         reminder_time = datetime.datetime.strptime(message.text, "%H:%M").time()
-
         # Здесь можно сохранить `reminder_time` вместе с `task_index` в базе данных или в переменной
-
-        bot.send_message(message.chat.id, f"Напоминание для задачи {task_index} установлено на {reminder_time}.")
-
+        bot.send_message(message.chat.id, f"Напоминание для задачи {task_id} установлено на {reminder_time}.")
         # Запуск функции, которая проверяет время и отправляет уведомление
-        schedule_reminder(message.chat.id, task_index, reminder_time)
+        schedule_reminder(message.chat.id, task_id, reminder_time)
     except ValueError:
         bot.send_message(message.chat.id, "Неверный формат времени. Пожалуйста, введите в формате ЧЧ:ММ.")
 
 
-def schedule_reminder(chat_id, task_index, reminder_time):
+def schedule_reminder(chat_id, task_id, reminder_time):
     def check_reminder():
         while True:
             now = datetime.datetime.now().time()
             # Проверяем, совпадает ли текущее время с заданным временем напоминания
             if now >= reminder_time:
-                bot.send_message(chat_id, f"Напоминание! Пора выполнить задачу {task_index}.")
+                bot.send_message(chat_id, f"Напоминание! Пора выполнить задачу {task_id}.")
                 break
             time.sleep(30)  # Проверяем каждые 30 секунд
 
