@@ -63,3 +63,13 @@ def get_resources_by_category(category):
     resources = cursor.fetchall()
     conn.close()
     return resources
+
+
+def save_label_to_db(task_id, label, emoji):
+    conn = sqlite3.connect('db.sqlite3')
+    cursor = conn.cursor()
+    cursor.execute("""INSERT INTO task_labels (task_id, label, emoji) VALUES (?, ?, ?)
+    ON CONFLICT(task_id) DO UPDATE SET label=excluded.label, emoji=excluded.emoji""",
+                   (task_id, label, emoji))
+    conn.commit()
+    conn.close()

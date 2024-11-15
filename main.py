@@ -73,7 +73,7 @@ def save_task(message):
         task_text = message.text
         user_id = message.chat.id
         add_task_to_db(message.chat.id, task_text, user_id)
-        bot.send_message(message.chat.id, f"Задача '{task_text.strip()}' добавлена.")
+        bot.send_message(message.chat.id, f"Задача '{task_text}' добавлена.")
     except:
         bot.send_message(message.chat.id, "Неверный формат. Попробуйте ещё раз.")
 
@@ -82,16 +82,31 @@ def save_task(message):
 def list_tasks(message):
     tasks = show_tasks()
     if tasks:
-        for id, task_text in enumerate(tasks, start=1):
+        for task_id, task_text in enumerate(tasks, start=1):
             markup = types.InlineKeyboardMarkup()
             markup.add(
-                types.InlineKeyboardButton(f"Установить напоминание для задачи {id}",
-                                           callback_data=f"add_reminder_{id}"),
-                types.InlineKeyboardButton(f"Установить метку для задачи {id}", callback_data=f"mark_task_{id}")
+                types.InlineKeyboardButton(f"Установить напоминание для задачи {task_id}",
+                                           callback_data=f"add_reminder_{task_id}"),
+                types.InlineKeyboardButton(f"Установить метку для задачи {task_id}",
+                                           callback_data=f"mark_task_{task_id}")
             )
-            bot.send_message(message.chat.id, f"{task_text}", reply_markup=markup)
+
+            # Получаем метку из базы данных
+            emoji = get_label_from_db(task_id)
+            emoji_text = f"Метка: {emoji}" if emoji else "Без метки"
+
+            bot.send_message(message.chat.id, text=f"{task_text}\n{emoji_text}", reply_markup=markup)
     else:
-        bot.send_message(message.chat.id, "Список заданий пуст.")
+        bot.send_message(message.chat.id, text="Список заданий пуст.")
+
+
+def get_label_from_db(task_id):
+    conn = sqlite3.connect("db.sqlite3")
+    cursor = conn.cursor()
+    cursor.execute("SELECT emoji FROM task_labels WHERE task_id = ?", (task_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else None
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("add_reminder_"))
@@ -128,6 +143,48 @@ def schedule_reminder(chat_id, task_id, reminder_time):
 
     # Запуск проверки в отдельном потоке, чтобы не блокировать бота
     threading.Thread(target=check_reminder).start()
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("mark_task_"))
+def set_task_label(call):
+    task_id = int(call.data.split("_")[-1])  # Извлечение id задачи
+
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        types.InlineKeyboardButton("🔴 Срочно", callback_data=f"label_urgent_{task_id}"),
+        types.InlineKeyboardButton("🔺 Высокий приоритет", callback_data=f"label_high_{task_id}"),
+        types.InlineKeyboardButton("🔸 Средний приоритет", callback_data=f"label_medium_{task_id}"),
+        types.InlineKeyboardButton("🔹 Низкий приоритет", callback_data=f"label_low_{task_id}"),
+        types.InlineKeyboardButton("📘 Обучение", callback_data=f"label_learning_{task_id}"),
+        types.InlineKeyboardButton("👤 Личное", callback_data=f"label_personal_{task_id}"),
+    )
+    bot.send_message(call.message.chat.id, "Выберите метку для задачи:", reply_markup=markup)
+
+
+# Этот обработчик вызывается при нажатии на конкретную метку
+@bot.callback_query_handler(func=lambda call: call.data.startswith("label_"))
+def ask_for_mark_task(call):
+    data_parts = call.data.split("_")
+    label = data_parts[1]
+    task_id = int(data_parts[-1])  # Предполагаем, что task_id - последний элемент
+
+    # Определяем emoji по метке
+    emoji_dict = {
+        "urgent": "🔴",
+        "high": "🔺",
+        "medium": "🔸",
+        "low": "🔹",
+        "learning": "📘",
+        "personal": "👤"
+    }
+
+    emoji = emoji_dict.get(label, "⚪")  # Используем значение по умолчанию, если метка не найдена
+
+    # Сохранение метки для задачи в базу данных
+    save_label_to_db(task_id, label, emoji)
+
+    # Сообщение пользователю о том, что метка была установлена
+    bot.answer_callback_query(call.id, f"Метка '{emoji} {label}' установлена для задачи.")
 
 
 @bot.message_handler(func=lambda message: message.text == "Удалить задание")

@@ -13,13 +13,13 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS tasks (
     reminder_time TEXT
 )''')
 
-# Создаем таблицу для тем
+# Создаем таблицу для сохранения тем пользователя
 cursor.execute('''CREATE TABLE IF NOT EXISTS topics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     topic_name TEXT NOT NULL
 )''')
 
-# Создаем таблицу для содержимого тем
+# Создаем таблицу для содержимого тем пользователя
 cursor.execute('''CREATE TABLE IF NOT EXISTS topic_content (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     topic_id INTEGER,
@@ -34,6 +34,16 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS resources (
     description TEXT,
     link TEXT,
     category TEXT
+)''')
+
+#  Создаем таблицу для цветных меток
+cursor.execute('''CREATE TABLE IF NOT EXISTS task_labels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    emoji TEXT NOT NULL,
+    label TEXT NOT NULL,
+    description TEXT,
+    task_id INTEGER UNIQUE,
+    FOREIGN KEY (task_id) REFERENCES tasks(id)
 )''')
 
 conn.commit()
